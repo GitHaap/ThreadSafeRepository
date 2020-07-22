@@ -4,9 +4,9 @@ using System.Text;
 
 namespace ThreadSafe
 {
-	public class StateModifier<T>
+    public class StateModifier<T>
     {
-		readonly Repository<T> m_repos;
+        readonly Repository<T> m_repos;
 
         /// <summary>
         /// Get/Set WIP state. Modify this state directly.
