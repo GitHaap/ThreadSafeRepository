@@ -8,7 +8,7 @@ namespace ThreadSafe
     {
         byte[] m_stateBytes;
 
-		readonly object m_syncRoot = new object();
+        readonly object m_syncRoot = new object();
 
         public Repository(T state)
         {
