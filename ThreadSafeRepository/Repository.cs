@@ -39,6 +39,17 @@ namespace ThreadSafe
             return new StateModifier<T>(this);
         }
 
+        public int CurrentRevision { get; internal set; }
+
+        public void UnDo()
+        {
+            //TODO: 世代管理する
+        }
+        public void ReDo()
+        {
+            //TODO: 世代管理する
+        }
+
         public void Rollback()
         {
             //TODO: 世代管理する
