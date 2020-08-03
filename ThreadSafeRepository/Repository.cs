@@ -7,12 +7,15 @@ namespace ThreadSafe
     public class Repository<T>
     {
         byte[] m_stateBytes;
+        uint m_currentRevision;
 
         readonly object m_syncRoot = new object();
+
 
         public Repository(T state)
         {
             CurrentState = state;
+            m_currentRevision = 1;
         }
 
         public T CurrentState
@@ -33,19 +36,49 @@ namespace ThreadSafe
                 }
             }
         }
+        public uint CurrentRevision
+        {
+            get
+            {
+                lock (m_syncRoot)
+                {
+                    return m_currentRevision;
+                }
+            }
+            private set
+            {
+                lock (m_syncRoot)
+                {
+                    m_currentRevision = value;
+                }
+            }
+        }
 
         public StateModifier<T> GetModifier()
         {
             return new StateModifier<T>(this);
         }
 
-        public int CurrentRevision { get; internal set; }
+        internal long Commit(T workingState, uint workingRevision)
+        {
+            lock (m_syncRoot)
+            {
+                if (CurrentRevision != workingRevision)
+                {
+                    return -1;
+                }
 
-        public void UnDo()
+                CurrentState = workingState;
+                CurrentRevision = workingRevision + 1; // revision up
+                return CurrentRevision;
+            }
+        }
+
+        public void Undo()
         {
             //TODO: 世代管理する
         }
-        public void ReDo()
+        public void Redo()
         {
             //TODO: 世代管理する
         }

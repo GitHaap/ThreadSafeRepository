@@ -13,19 +13,38 @@ namespace ThreadSafe
         /// </summary>
         public T WorkingState { get; set; }
 
+        /// <summary>
+        /// Get revision of WorkingState.
+        /// </summary>
+        public uint WorkingRevision { get; private set; }
+
 
         internal StateModifier(Repository<T> repos)
         {
             m_repos = repos;
             WorkingState = m_repos.CurrentState;
+            WorkingRevision = m_repos.CurrentRevision;
         }
 
         /// <summary>
         /// Commit WorkingState. CurrentState of the repository will be updated.
         /// </summary>
-        public void Commit()
+        public bool Commit()
         {
-            m_repos.CurrentState = WorkingState;
+            //TODO: ここにもロックがほしい
+
+            long committedRevision = m_repos.Commit(WorkingState, WorkingRevision);
+            if (committedRevision != -1)
+            {
+                // success
+                WorkingRevision = (uint)committedRevision; // revision up
+                return true;
+            }
+			else
+            {
+                // failure
+                return false;
+            }
         }
     }
 }
