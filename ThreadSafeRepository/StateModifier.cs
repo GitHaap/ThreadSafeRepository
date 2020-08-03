@@ -40,7 +40,7 @@ namespace ThreadSafe
                 WorkingRevision = (uint)committedRevision; // revision up
                 return true;
             }
-			else
+            else
             {
                 // failure
                 return false;
