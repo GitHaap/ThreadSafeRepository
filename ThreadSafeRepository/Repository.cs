@@ -1,6 +1,7 @@
 ﻿using MessagePack;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ThreadSafe
 {
@@ -11,12 +12,18 @@ namespace ThreadSafe
 
         readonly object m_syncRoot = new object();
 
+        LinkedList<byte[]> m_undoList = new LinkedList<byte[]>();
+        LinkedList<byte[]> m_redoList = new LinkedList<byte[]>();
 
-        public Repository(T state)
+        public Repository(T state, int historyBufferLength = 10)
         {
             CurrentState = state;
+            HistoryBufferLength = 10;
             m_currentRevision = 1;
         }
+
+        public int HistoryBufferLength { get; private set; }
+
 
         public T CurrentState
         {
@@ -68,6 +75,15 @@ namespace ThreadSafe
                     return -1;
                 }
 
+                // push prev state to undo buffer
+                m_undoList.AddLast(m_stateBytes);
+
+                // remove oldest state
+                if (m_undoList.Count > HistoryBufferLength)
+                {
+                    m_undoList.RemoveFirst();
+                }
+
                 CurrentState = workingState;
                 CurrentRevision = workingRevision + 1; // revision up
                 return CurrentRevision;
@@ -76,8 +92,26 @@ namespace ThreadSafe
 
         public void Undo()
         {
-            //TODO: 世代管理する
+            lock (m_syncRoot)
+            {
+                if (m_undoList.Count == 0)
+                {
+                    return;
+                }
+
+                // pull prev state
+                byte[] prevBytes = m_undoList.Last();
+                m_undoList.RemoveLast();
+
+                // update current
+                m_stateBytes = prevBytes;
+                m_currentRevision--; // revision down
+
+                // push current state to redo buffer
+                m_redoList.AddFirst(m_stateBytes);
+            }
         }
+
         public void Redo()
         {
             //TODO: 世代管理する
