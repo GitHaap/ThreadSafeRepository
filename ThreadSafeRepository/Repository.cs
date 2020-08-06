@@ -103,18 +103,35 @@ namespace ThreadSafe
                 byte[] prevBytes = m_undoList.Last();
                 m_undoList.RemoveLast();
 
+                // push current state to redo buffer
+                m_redoList.AddFirst(m_stateBytes);
+
                 // update current
                 m_stateBytes = prevBytes;
                 m_currentRevision--; // revision down
-
-                // push current state to redo buffer
-                m_redoList.AddFirst(m_stateBytes);
             }
         }
 
         public void Redo()
         {
-            //TODO: 世代管理する
+            lock (m_syncRoot)
+            {
+                if (m_redoList.Count == 0)
+                {
+                    return;
+                }
+
+                // pull next state
+                byte[] nextBytes = m_redoList.First();
+                m_redoList.RemoveFirst();
+
+                // push current state to undo buffer
+                m_undoList.AddLast(m_stateBytes);
+
+                // update current
+                m_stateBytes = nextBytes;
+                m_currentRevision++; // revision up
+            }
         }
 
         public void Rollback()
