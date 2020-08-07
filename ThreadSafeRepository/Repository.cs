@@ -90,13 +90,13 @@ namespace ThreadSafe
             }
         }
 
-        public void Undo()
+        public bool Undo()
         {
             lock (m_syncRoot)
             {
                 if (m_undoBuffer.Count == 0)
                 {
-                    return;
+                    return false;
                 }
 
                 // pull prev state
@@ -109,16 +109,18 @@ namespace ThreadSafe
                 // update current
                 m_stateBytes = prevBytes;
                 m_currentRevision--; // revision down
+
+                return true;
             }
         }
 
-        public void Redo()
+        public bool Redo()
         {
             lock (m_syncRoot)
             {
                 if (m_redoBuffer.Count == 0)
                 {
-                    return;
+                    return false;
                 }
 
                 // pull next state
@@ -131,16 +133,9 @@ namespace ThreadSafe
                 // update current
                 m_stateBytes = nextBytes;
                 m_currentRevision++; // revision up
-            }
-        }
 
-        public void Rollback()
-        {
-            //TODO: 世代管理する
-        }
-        public void History()
-        {
-            //TODO: 世代管理する
+                return true;
+            }
         }
     }
 }
