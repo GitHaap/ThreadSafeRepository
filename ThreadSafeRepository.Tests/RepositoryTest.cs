@@ -95,7 +95,7 @@ namespace ThreadSafeRepository.Tests
 
 
 		[Fact]
-		public void 異常系_途中からコミットした場合それより後ろのRedoバッファがクリアされる()
+		public void 正常系_ヒストリー途中からのコミットするとそこが更新()
 		{
 			var repos = new Repository<int>(1000);
 
