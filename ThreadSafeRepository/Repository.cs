@@ -10,10 +10,10 @@ namespace ThreadSafe
         private byte[] m_stateBytes;
         private uint m_currentRevision;
 
-        private readonly object m_syncRoot = new object();
-
         private LinkedList<byte[]> m_undoBuffer = new LinkedList<byte[]>();
         private LinkedList<byte[]> m_redoBuffer = new LinkedList<byte[]>();
+
+        internal readonly object m_syncRoot = new object();
 
         public Repository(T state, int historyBufferMaxSize = 10)
         {

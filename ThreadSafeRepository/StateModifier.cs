@@ -31,19 +31,20 @@ namespace ThreadSafe
         /// </summary>
         public bool Commit()
         {
-            //TODO: ここにもロックがほしい
-
-            long committedRevision = m_repos.Commit(WorkingState, WorkingRevision);
-            if (committedRevision != -1)
+            lock (m_repos.m_syncRoot)
             {
-                // success
-                WorkingRevision = (uint)committedRevision; // revision up
-                return true;
-            }
-            else
-            {
-                // failure
-                return false;
+                long committedRevision = m_repos.Commit(WorkingState, WorkingRevision);
+                if (committedRevision != -1)
+                {
+                    // success
+                    WorkingRevision = (uint)committedRevision; // revision up
+                    return true;
+                }
+                else
+                {
+                    // failure
+                    return false;
+                }
             }
         }
     }
