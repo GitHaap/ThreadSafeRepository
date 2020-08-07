@@ -7,7 +7,7 @@ namespace ThreadSafeRepository.Tests
 	public class RepositoryTest
 	{
 		[Fact]
-		public void リポジトリ初期化()
+		public void 正常系_リポジトリ初期化()
 		{
 			var repos = new Repository<int>(1000, 100);
 
@@ -17,7 +17,7 @@ namespace ThreadSafeRepository.Tests
 		}
 
 		[Fact]
-		public void 単一スレッドからのコミット()
+		public void 正常系_単一スレッドからのコミット()
 		{
 			var repos = new Repository<int>(1000);
 			
@@ -43,7 +43,7 @@ namespace ThreadSafeRepository.Tests
 		}
 
 		[Fact]
-		public void 戻る進む()
+		public void 正常系_戻る進む()
 		{
 			var repos = new Repository<int>(1000);
 
@@ -68,5 +68,64 @@ namespace ThreadSafeRepository.Tests
 			Assert.Equal(2u, repos.CurrentRevision);
 		}
 
+		[Fact]
+		public void 異常系_リビジョン違いの場合は修正不可能()
+		{
+			var repos = new Repository<int>(1000);
+
+			var modifier = repos.GetModifier();
+			modifier.WorkingState = 2000;
+			modifier.Commit();
+
+			// 1つ戻る
+			bool successUndo = repos.Undo();
+			Assert.True(successUndo);
+			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1u, repos.CurrentRevision);
+
+			// モディファイアはかわらない
+			Assert.Equal(2000, modifier.WorkingState);
+			Assert.Equal(2u, modifier.WorkingRevision);
+
+			// リビジョン違いのためコミットできない
+			modifier.WorkingState = 3000;
+			bool committed = modifier.Commit();
+			Assert.False(committed);
+		}
+
+
+		[Fact]
+		public void 異常系_途中からコミットした場合それより後ろのRedoバッファがクリアされる()
+		{
+			var repos = new Repository<int>(1000);
+
+			var modifier = repos.GetModifier();
+			modifier.WorkingState = 2000;
+			modifier.Commit();
+
+			// 1つ戻る
+			bool successUndo = repos.Undo();
+			Assert.True(successUndo);
+			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1u, repos.CurrentRevision);
+
+			// モディファイアを新しく取得
+			var modifier2 = repos.GetModifier();
+			Assert.Equal(1000, modifier2.WorkingState);
+			Assert.Equal(1u, modifier2.WorkingRevision);
+
+			// 修正
+			modifier2.WorkingState = 3000;
+			bool committed = modifier2.Commit();
+			Assert.True(committed);
+
+			// リポジトリに反映される
+			Assert.Equal(3000, repos.CurrentState);
+			Assert.Equal(2u, repos.CurrentRevision); // リビジョン2が上書きされる
+
+			// 進めない（今追加したのが最新リビジョンになったので）
+			bool failureRedo = repos.Redo();
+			Assert.False(failureRedo);
+		}
 	}
 }

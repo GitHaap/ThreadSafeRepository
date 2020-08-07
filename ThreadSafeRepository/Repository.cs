@@ -84,6 +84,9 @@ namespace ThreadSafe
                     m_undoBuffer.RemoveFirst();
                 }
 
+                // clear redo bufs
+                m_redoBuffer.Clear();
+
                 CurrentState = workingState;
                 CurrentRevision = workingRevision + 1; // revision up
                 return CurrentRevision;
