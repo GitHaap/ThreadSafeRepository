@@ -6,7 +6,7 @@ namespace ThreadSafe
 {
     public class StateModifier<T>
     {
-        readonly Repository<T> m_repos;
+        private readonly Repository<T> m_repos;
 
         /// <summary>
         /// Get/Set WIP state. Modify this state directly.

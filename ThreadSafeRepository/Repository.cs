@@ -7,22 +7,22 @@ namespace ThreadSafe
 {
     public class Repository<T>
     {
-        byte[] m_stateBytes;
-        uint m_currentRevision;
+        private byte[] m_stateBytes;
+        private uint m_currentRevision;
 
-        readonly object m_syncRoot = new object();
+        private readonly object m_syncRoot = new object();
 
-        LinkedList<byte[]> m_undoList = new LinkedList<byte[]>();
-        LinkedList<byte[]> m_redoList = new LinkedList<byte[]>();
+        private LinkedList<byte[]> m_undoBuffer = new LinkedList<byte[]>();
+        private LinkedList<byte[]> m_redoBuffer = new LinkedList<byte[]>();
 
-        public Repository(T state, int historyBufferLength = 10)
+        public Repository(T state, int historyBufferMaxSize = 10)
         {
             CurrentState = state;
-            HistoryBufferLength = 10;
+            HistoryBufferMaxSize = 10;
             m_currentRevision = 1;
         }
 
-        public int HistoryBufferLength { get; private set; }
+        public int HistoryBufferMaxSize { get; private set; }
 
 
         public T CurrentState
@@ -76,12 +76,12 @@ namespace ThreadSafe
                 }
 
                 // push prev state to undo buffer
-                m_undoList.AddLast(m_stateBytes);
+                m_undoBuffer.AddLast(m_stateBytes);
 
                 // remove oldest state
-                if (m_undoList.Count > HistoryBufferLength)
+                if (m_undoBuffer.Count > HistoryBufferMaxSize)
                 {
-                    m_undoList.RemoveFirst();
+                    m_undoBuffer.RemoveFirst();
                 }
 
                 CurrentState = workingState;
@@ -94,17 +94,17 @@ namespace ThreadSafe
         {
             lock (m_syncRoot)
             {
-                if (m_undoList.Count == 0)
+                if (m_undoBuffer.Count == 0)
                 {
                     return;
                 }
 
                 // pull prev state
-                byte[] prevBytes = m_undoList.Last();
-                m_undoList.RemoveLast();
+                byte[] prevBytes = m_undoBuffer.Last();
+                m_undoBuffer.RemoveLast();
 
                 // push current state to redo buffer
-                m_redoList.AddFirst(m_stateBytes);
+                m_redoBuffer.AddFirst(m_stateBytes);
 
                 // update current
                 m_stateBytes = prevBytes;
@@ -116,17 +116,17 @@ namespace ThreadSafe
         {
             lock (m_syncRoot)
             {
-                if (m_redoList.Count == 0)
+                if (m_redoBuffer.Count == 0)
                 {
                     return;
                 }
 
                 // pull next state
-                byte[] nextBytes = m_redoList.First();
-                m_redoList.RemoveFirst();
+                byte[] nextBytes = m_redoBuffer.First();
+                m_redoBuffer.RemoveFirst();
 
                 // push current state to undo buffer
-                m_undoList.AddLast(m_stateBytes);
+                m_undoBuffer.AddLast(m_stateBytes);
 
                 // update current
                 m_stateBytes = nextBytes;
