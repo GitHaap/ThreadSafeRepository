@@ -18,7 +18,7 @@ namespace ThreadSafe
         public Repository(T state, int historyBufferMaxSize = 10)
         {
             CurrentState = state;
-            HistoryBufferMaxSize = 10;
+            HistoryBufferMaxSize = historyBufferMaxSize;
             m_currentRevision = 1;
         }
 
