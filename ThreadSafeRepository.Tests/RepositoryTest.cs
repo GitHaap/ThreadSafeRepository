@@ -121,7 +121,7 @@ namespace ThreadSafeRepository.Tests
 
 			// リポジトリに反映される
 			Assert.Equal(3000, repos.CurrentState);
-			Assert.Equal(2u, repos.CurrentRevision); // リビジョン2が上書きされる //TODO:こうじゃなくてリビジョン番号は増えるだけのほうがいいかも
+			Assert.Equal(3u, repos.CurrentRevision); // リビジョン番号は増えるだけ
 
 			// 進めない（今追加したのが最新リビジョンになったので）
 			bool failureRedo = repos.Redo();

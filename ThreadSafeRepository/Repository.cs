@@ -7,19 +7,36 @@ namespace ThreadSafe
 {
     public class Repository<T>
     {
-        private byte[] m_stateBytes;
-        private uint m_currentRevision;
+        private class Revision
+        {
+            public Revision(uint revisionId, byte[] stateBytes, DateTime committedTime)
+            {
+                RevisionNumber = revisionId;
+                StateBytes = stateBytes;
+                CommittedTime = committedTime;
+            }
 
-        private LinkedList<byte[]> m_undoBuffer = new LinkedList<byte[]>();
-        private LinkedList<byte[]> m_redoBuffer = new LinkedList<byte[]>();
+			public uint RevisionNumber { get; set; }
+
+            public byte[] StateBytes { get; set; }
+
+            public DateTime CommittedTime { get; set; }
+        }
+        
+        private Revision m_currentRevision;
+        private LinkedList<Revision> m_undoBuffer = new LinkedList<Revision>();
+        private LinkedList<Revision> m_redoBuffer = new LinkedList<Revision>();
+        private uint m_nextRevisionNumber = 1;
 
         internal readonly object m_syncRoot = new object();
 
+
         public Repository(T state, int historyBufferMaxSize = 10)
         {
-            CurrentState = state;
+            m_currentRevision = new Revision(m_nextRevisionNumber, MessagePackSerializer.Serialize<T>(state), DateTime.Now);
+            m_nextRevisionNumber++;
+
             HistoryBufferMaxSize = historyBufferMaxSize;
-            m_currentRevision = 1;
         }
 
         public int HistoryBufferMaxSize { get; private set; }
@@ -31,15 +48,13 @@ namespace ThreadSafe
             {
                 lock (m_syncRoot)
                 {
+                    if( m_currentRevision is null)
+					{
+                        return default(T);
+					}
+
                     //TODO: オブジェクトプールを使いたい
-                    return MessagePackSerializer.Deserialize<T>(m_stateBytes);
-                }
-            }
-            internal set
-            {
-                lock (m_syncRoot)
-                {
-                    m_stateBytes = MessagePackSerializer.Serialize<T>(value);
+                    return MessagePackSerializer.Deserialize<T>(m_currentRevision.StateBytes);
                 }
             }
         }
@@ -49,14 +64,12 @@ namespace ThreadSafe
             {
                 lock (m_syncRoot)
                 {
-                    return m_currentRevision;
-                }
-            }
-            private set
-            {
-                lock (m_syncRoot)
-                {
-                    m_currentRevision = value;
+                    if (m_currentRevision is null)
+                    {
+                        return 0;
+                    }
+
+                    return m_currentRevision.RevisionNumber;
                 }
             }
         }
@@ -75,10 +88,10 @@ namespace ThreadSafe
                     return -1;
                 }
 
-                // push prev state to undo buffer
-                m_undoBuffer.AddLast(m_stateBytes);
+                // push prev revision to undo buffer
+                m_undoBuffer.AddLast(m_currentRevision);
 
-                // remove oldest state
+                // remove oldest revision
                 if (m_undoBuffer.Count > HistoryBufferMaxSize)
                 {
                     m_undoBuffer.RemoveFirst();
@@ -87,8 +100,10 @@ namespace ThreadSafe
                 // clear redo bufs
                 m_redoBuffer.Clear();
 
-                CurrentState = workingState;
-                CurrentRevision = workingRevision + 1; // revision up
+                // create new current (revision up)
+                m_currentRevision = new Revision(m_nextRevisionNumber, MessagePackSerializer.Serialize<T>(workingState), DateTime.Now);
+                m_nextRevisionNumber++;
+
                 return CurrentRevision;
             }
         }
@@ -102,16 +117,15 @@ namespace ThreadSafe
                     return false;
                 }
 
-                // pull prev state
-                byte[] prevBytes = m_undoBuffer.Last();
+                // pull prev revision
+                var prevRevision = m_undoBuffer.Last();
                 m_undoBuffer.RemoveLast();
 
-                // push current state to redo buffer
-                m_redoBuffer.AddFirst(m_stateBytes);
+                // push current revision to redo buffer
+                m_redoBuffer.AddFirst(m_currentRevision);
 
-                // update current
-                m_stateBytes = prevBytes;
-                m_currentRevision--; // revision down
+                // undo current (revision down)
+                m_currentRevision = prevRevision;
 
                 return true;
             }
@@ -126,16 +140,15 @@ namespace ThreadSafe
                     return false;
                 }
 
-                // pull next state
-                byte[] nextBytes = m_redoBuffer.First();
+                // pull next revision
+                var nextRevision = m_redoBuffer.First();
                 m_redoBuffer.RemoveFirst();
 
-                // push current state to undo buffer
-                m_undoBuffer.AddLast(m_stateBytes);
+                // push current revision to undo buffer
+                m_undoBuffer.AddLast(m_currentRevision);
 
-                // update current
-                m_stateBytes = nextBytes;
-                m_currentRevision++; // revision up
+                // redo current
+                m_currentRevision = nextRevision;
 
                 return true;
             }
