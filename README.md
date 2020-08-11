@@ -5,7 +5,7 @@ You can modify/undo/redo the managed data exclusively.
 
 
 # Usage
-```
+```C#
 var repos = new Repository<SampleClass>(obj);
 
 // modify
