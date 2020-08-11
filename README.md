@@ -11,11 +11,14 @@ var repos = new Repository<SampleClass>(obj);
 // modify
 var modifier = repos.GetModifier();
 modifier.WorkingState = modifiedObj;
-// commit
+// reflect the modification
 modifier.Commit();
 
-// undo
+// CurrentState is deep-copied object
+var objX = repos.CurrentState;
+
+// change to previous revision
 bool successUndo = repos.Undo();
-// redo
+// change to next revision
 bool successRedo = repos.Redo();
 ```
