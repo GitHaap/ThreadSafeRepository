@@ -12,7 +12,7 @@ namespace ThreadSafeRepository.Tests
 			var repos = new Repository<int>(1000, 100);
 
 			Assert.Equal(1000, repos.CurrentState);
-			Assert.Equal(100, repos.HistoryBufferMaxLength);
+			Assert.Equal(100u, repos.HistoryBufferMaxLength);
 			Assert.Equal(1u, repos.CurrentRevision);
 		}
 		[Fact]
@@ -21,7 +21,7 @@ namespace ThreadSafeRepository.Tests
 			var repos = new Repository<int?>(null, 100);
 
 			Assert.Null(repos.CurrentState);
-			Assert.Equal(100, repos.HistoryBufferMaxLength);
+			Assert.Equal(100u, repos.HistoryBufferMaxLength);
 			Assert.Equal(1u, repos.CurrentRevision);
 		}
 
@@ -40,7 +40,7 @@ namespace ThreadSafeRepository.Tests
 		public void 修正系_単一スレッドからのコミット()
 		{
 			var repos = new Repository<int>(1000);
-			
+
 			var modifier = repos.GetModifier();
 			Assert.Equal(1000, modifier.WorkingState);
 			Assert.Equal(1u, modifier.WorkingRevision);
@@ -160,6 +160,23 @@ namespace ThreadSafeRepository.Tests
 			Assert.True(successRedo);
 			Assert.Equal(2000, repos.CurrentState);
 			Assert.Equal(2u, repos.CurrentRevision);
+		}
+		[Fact]
+		public void リビジョン系_historyバッファゼロ()
+		{
+			var repos = new Repository<int>(1000, 0);
+
+			var modifier = repos.GetModifier();
+			modifier.WorkingState = 2000;
+			modifier.Commit();
+
+			// リポジトリに反映される
+			Assert.Equal(2000, repos.CurrentState);
+			Assert.Equal(2u, repos.CurrentRevision);
+
+			// バッファがないので戻れない
+			bool successUndo = repos.Undo();
+			Assert.False(successUndo);
 		}
 	}
 }

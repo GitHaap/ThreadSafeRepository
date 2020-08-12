@@ -38,7 +38,7 @@ namespace ThreadSafe
         /// </summary>
         /// <param name="state">State you want to manage</param>
         /// <param name="historyBufferMaxLength">Number that can undo</param>
-        public Repository(T state, int historyBufferMaxLength = 10)
+        public Repository(T state, uint historyBufferMaxLength = 10)
         {
             m_currentRevision = new Revision(m_nextRevisionNumber, MessagePackSerializer.Serialize<T>(state), DateTime.Now);
             m_nextRevisionNumber++;
@@ -46,7 +46,7 @@ namespace ThreadSafe
             HistoryBufferMaxLength = historyBufferMaxLength;
         }
 
-        public int HistoryBufferMaxLength { get; private set; }
+        public uint HistoryBufferMaxLength { get; private set; }
 
 
         /// <summary>
