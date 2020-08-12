@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace ThreadSafe
 {
+    /// <summary>
+    /// Thread-safe data manager. You can modify/undo/redo the managed data exclusively.
+    /// </summary>
     public class Repository<T>
     {
         private class Revision
@@ -16,13 +19,13 @@ namespace ThreadSafe
                 CommittedTime = committedTime;
             }
 
-			public uint RevisionNumber { get; set; }
+            public uint RevisionNumber { get; set; }
 
             public byte[] StateBytes { get; set; }
 
             public DateTime CommittedTime { get; set; }
         }
-        
+
         private Revision m_currentRevision;
         private LinkedList<Revision> m_undoBuffer = new LinkedList<Revision>();
         private LinkedList<Revision> m_redoBuffer = new LinkedList<Revision>();
@@ -30,34 +33,44 @@ namespace ThreadSafe
 
         internal readonly object m_syncRoot = new object();
 
-
-        public Repository(T state, int historyBufferMaxSize = 10)
+        /// <summary>
+        /// Initializes a new instance of the ThreadSafe.Repository class.
+        /// </summary>
+        /// <param name="state">State you want to manage</param>
+        /// <param name="historyBufferMaxLength">Number that can undo</param>
+        public Repository(T state, int historyBufferMaxLength = 10)
         {
             m_currentRevision = new Revision(m_nextRevisionNumber, MessagePackSerializer.Serialize<T>(state), DateTime.Now);
             m_nextRevisionNumber++;
 
-            HistoryBufferMaxSize = historyBufferMaxSize;
+            HistoryBufferMaxLength = historyBufferMaxLength;
         }
 
-        public int HistoryBufferMaxSize { get; private set; }
+        public int HistoryBufferMaxLength { get; private set; }
 
 
+        /// <summary>
+        /// Get "deep-copied" current state.
+        /// </summary>
         public T CurrentState
         {
             get
             {
                 lock (m_syncRoot)
                 {
-                    if( m_currentRevision is null)
-					{
+                    if (m_currentRevision is null)
+                    {
                         return default(T);
-					}
+                    }
 
                     //TODO: オブジェクトプールを使いたい
                     return MessagePackSerializer.Deserialize<T>(m_currentRevision.StateBytes);
                 }
             }
         }
+        /// <summary>
+        /// Get revision of CurrentState.
+        /// </summary>
         public uint CurrentRevision
         {
             get
@@ -74,6 +87,9 @@ namespace ThreadSafe
             }
         }
 
+        /// <summary>
+        /// Can be modified state via StateModifier.
+        /// </summary>
         public StateModifier<T> GetModifier()
         {
             return new StateModifier<T>(this);
@@ -92,7 +108,7 @@ namespace ThreadSafe
                 m_undoBuffer.AddLast(m_currentRevision);
 
                 // remove oldest revision
-                if (m_undoBuffer.Count > HistoryBufferMaxSize)
+                if (m_undoBuffer.Count > HistoryBufferMaxLength)
                 {
                     m_undoBuffer.RemoveFirst();
                 }
@@ -108,6 +124,9 @@ namespace ThreadSafe
             }
         }
 
+        /// <summary>
+        /// Change to previous revision.
+        /// </summary>
         public bool Undo()
         {
             lock (m_syncRoot)
@@ -131,6 +150,9 @@ namespace ThreadSafe
             }
         }
 
+        /// <summary>
+        /// Change to next revision.
+        /// </summary>
         public bool Redo()
         {
             lock (m_syncRoot)

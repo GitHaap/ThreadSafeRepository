@@ -12,7 +12,7 @@ namespace ThreadSafeRepository.Tests
 			var repos = new Repository<int>(1000, 100);
 
 			Assert.Equal(1000, repos.CurrentState);
-			Assert.Equal(100, repos.HistoryBufferMaxSize);
+			Assert.Equal(100, repos.HistoryBufferMaxLength);
 			Assert.Equal(1u, repos.CurrentRevision);
 		}
 		[Fact]
@@ -21,7 +21,7 @@ namespace ThreadSafeRepository.Tests
 			var repos = new Repository<int?>(null, 100);
 
 			Assert.Null(repos.CurrentState);
-			Assert.Equal(100, repos.HistoryBufferMaxSize);
+			Assert.Equal(100, repos.HistoryBufferMaxLength);
 			Assert.Equal(1u, repos.CurrentRevision);
 		}
 
