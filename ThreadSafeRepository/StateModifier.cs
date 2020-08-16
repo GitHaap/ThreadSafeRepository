@@ -22,7 +22,7 @@ namespace ThreadSafe
         internal StateModifier(Repository<T> repos)
         {
             m_repos = repos;
-            WorkingState = m_repos.CurrentState;
+            WorkingState = m_repos.CurrentStateClone;
             WorkingRevision = m_repos.CurrentRevision;
         }
 

@@ -11,7 +11,7 @@ namespace ThreadSafeRepository.Tests
 		{
 			var repos = new Repository<int>(1000, 100);
 
-			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1000, repos.CurrentStateClone);
 			Assert.Equal(100u, repos.HistoryBufferMaxLength);
 			Assert.Equal(1u, repos.CurrentRevision);
 		}
@@ -20,7 +20,7 @@ namespace ThreadSafeRepository.Tests
 		{
 			var repos = new Repository<int?>(null, 100);
 
-			Assert.Null(repos.CurrentState);
+			Assert.Null(repos.CurrentStateClone);
 			Assert.Equal(100u, repos.HistoryBufferMaxLength);
 			Assert.Equal(1u, repos.CurrentRevision);
 		}
@@ -30,8 +30,8 @@ namespace ThreadSafeRepository.Tests
 		{
 			var repos = new Repository<int?>(1000, 100);
 
-			var objA = repos.CurrentState;
-			var objB = repos.CurrentState;
+			var objA = repos.CurrentStateClone;
+			var objB = repos.CurrentStateClone;
 
 			Assert.False(object.ReferenceEquals(objA, objB));
 		}
@@ -48,13 +48,13 @@ namespace ThreadSafeRepository.Tests
 			modifier.WorkingState = 2000;
 
 			// リポジトリはこの時点では不変
-			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1000, repos.CurrentStateClone);
 			Assert.Equal(1u, repos.CurrentRevision);
 
 			modifier.Commit();
 
 			// リポジトリに反映される
-			Assert.Equal(2000, repos.CurrentState);
+			Assert.Equal(2000, repos.CurrentStateClone);
 			Assert.Equal(2u, repos.CurrentRevision);
 
 			// モディファイアもバージョンアップされる
@@ -71,7 +71,7 @@ namespace ThreadSafeRepository.Tests
 			modifier.Commit();
 
 			// リポジトリに反映される
-			Assert.Null(repos.CurrentState);
+			Assert.Null(repos.CurrentStateClone);
 			Assert.Equal(2u, repos.CurrentRevision);
 
 			// モディファイアもバージョンアップされる
@@ -90,7 +90,7 @@ namespace ThreadSafeRepository.Tests
 			// 1つ戻る
 			bool successUndo = repos.Undo();
 			Assert.True(successUndo);
-			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1000, repos.CurrentStateClone);
 			Assert.Equal(1u, repos.CurrentRevision);
 
 			// モディファイアを新しく取得
@@ -104,7 +104,7 @@ namespace ThreadSafeRepository.Tests
 			Assert.True(committed);
 
 			// リポジトリに反映される
-			Assert.Equal(3000, repos.CurrentState);
+			Assert.Equal(3000, repos.CurrentStateClone);
 			Assert.Equal(3u, repos.CurrentRevision); // リビジョン番号は増えるだけ
 
 			// 進めない（今追加したのが最新リビジョンになったので）
@@ -123,7 +123,7 @@ namespace ThreadSafeRepository.Tests
 			// 1つ戻る
 			bool successUndo = repos.Undo();
 			Assert.True(successUndo);
-			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1000, repos.CurrentStateClone);
 			Assert.Equal(1u, repos.CurrentRevision);
 
 			// モディファイアはかわらない
@@ -148,7 +148,7 @@ namespace ThreadSafeRepository.Tests
 			// 1つ戻る
 			bool successUndo = repos.Undo();
 			Assert.True(successUndo);
-			Assert.Equal(1000, repos.CurrentState);
+			Assert.Equal(1000, repos.CurrentStateClone);
 			Assert.Equal(1u, repos.CurrentRevision);
 
 			// モディファイアはかわらない
@@ -158,7 +158,7 @@ namespace ThreadSafeRepository.Tests
 			// 1つ進む
 			bool successRedo = repos.Redo();
 			Assert.True(successRedo);
-			Assert.Equal(2000, repos.CurrentState);
+			Assert.Equal(2000, repos.CurrentStateClone);
 			Assert.Equal(2u, repos.CurrentRevision);
 		}
 		[Fact]
@@ -171,7 +171,7 @@ namespace ThreadSafeRepository.Tests
 			modifier.Commit();
 
 			// リポジトリに反映される
-			Assert.Equal(2000, repos.CurrentState);
+			Assert.Equal(2000, repos.CurrentStateClone);
 			Assert.Equal(2u, repos.CurrentRevision);
 
 			// バッファがないので戻れない

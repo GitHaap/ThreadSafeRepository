@@ -52,7 +52,7 @@ namespace ThreadSafe
         /// <summary>
         /// Get "deep-copied" current state.
         /// </summary>
-        public T CurrentState
+        public T CurrentStateClone
         {
             get
             {
