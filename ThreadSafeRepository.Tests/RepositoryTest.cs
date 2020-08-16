@@ -106,6 +106,9 @@ namespace ThreadSafeRepository.Tests
 			// リポジトリに反映される
 			Assert.Equal(3000, repos.CurrentStateClone);
 			Assert.Equal(3u, repos.CurrentRevision); // リビジョン番号は増えるだけ
+			// モディファイアも修正される
+			Assert.Equal(3000, modifier2.WorkingState);
+			Assert.Equal(3u, modifier2.WorkingRevision);
 
 			// 進めない（今追加したのが最新リビジョンになったので）
 			bool failureRedo = repos.Redo();
@@ -177,6 +180,31 @@ namespace ThreadSafeRepository.Tests
 			// バッファがないので戻れない
 			bool successUndo = repos.Undo();
 			Assert.False(successUndo);
+		}
+		[Fact]
+		public void リビジョン系_最新リビジョンに移行()
+		{
+			var repos = new Repository<int>(1000);
+
+			var modifier = repos.GetModifier();
+			modifier.WorkingState = 2000;
+			modifier.Commit();
+			modifier.WorkingState = 3000;
+			modifier.Commit();
+			modifier.WorkingState = 4000;
+			modifier.Commit();
+
+			// 最初のリビジョンまで戻る
+			repos.Undo();
+			repos.Undo();
+			repos.Undo();
+			Assert.Equal(1000, repos.CurrentStateClone);
+			Assert.Equal(1u, repos.CurrentRevision);
+
+			// アップデート
+			repos.Update();
+			Assert.Equal(4000, repos.CurrentStateClone);
+			Assert.Equal(4u, repos.CurrentRevision);
 		}
 	}
 }

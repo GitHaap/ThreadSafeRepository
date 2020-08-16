@@ -125,6 +125,17 @@ namespace ThreadSafe
         }
 
         /// <summary>
+        /// Change to head(latest) revision.
+        /// </summary>
+        public void Update()
+        {
+            lock (m_syncRoot)
+            {
+                while (Redo()) ;
+            }
+        }
+
+        /// <summary>
         /// Change to previous revision.
         /// </summary>
         public bool Undo()
