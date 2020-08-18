@@ -8,14 +8,15 @@ You can modify/undo/redo the managed data exclusively.
 ```C#
 var repos = new Repository<SampleClass>(obj);
 
-// modify
+// modify via StateModifier
 var modifier = repos.GetModifier();
 modifier.WorkingState = modifiedObj;
+
 // reflect the modification
 modifier.Commit();
 
 // CurrentState is deep-copied object
-var objX = repos.CurrentState;
+var objX = repos.CurrentStateClone;
 
 // change to previous revision
 bool successUndo = repos.Undo();
