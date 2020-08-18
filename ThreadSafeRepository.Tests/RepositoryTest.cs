@@ -62,6 +62,34 @@ namespace ThreadSafeRepository.Tests
 			Assert.Equal(2u, modifier.WorkingRevision);
 		}
 		[Fact]
+		public void 修正系_別のモディファイアからの連続コミットはリビジョン違いで失敗する()
+		{
+			var repos = new Repository<int>(1000);
+
+			// 2個のモディファイアAとBを用意する
+			var modifierA = repos.GetModifier();
+			var modifierB = repos.GetModifier();
+
+			// Aで修正
+			modifierA.WorkingState = 2000;
+			bool commitedA = modifierA.Commit();
+			// リポジトリに反映される
+			Assert.True(commitedA);
+			Assert.Equal(2000, repos.CurrentStateClone);
+			Assert.Equal(2u, repos.CurrentRevision);
+			// モディファイアもバージョンアップされる
+			Assert.Equal(2000, modifierA.WorkingState);
+			Assert.Equal(2u, modifierA.WorkingRevision);
+
+			// Bで修正
+			modifierB.WorkingState = 3000;
+			bool commitedB = modifierB.Commit();
+			// リビジョンが合わないのでCommit失敗
+			Assert.False(commitedB);
+			// Bは取得時のまま
+			Assert.Equal(1u, modifierB.WorkingRevision);
+		}
+		[Fact]
 		public void 修正系_nullをコミット()
 		{
 			var repos = new Repository<int?>(1000);
