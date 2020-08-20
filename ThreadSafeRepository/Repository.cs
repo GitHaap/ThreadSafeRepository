@@ -92,7 +92,10 @@ namespace ThreadSafe
         /// </summary>
         public StateModifier<T> GetModifier()
         {
-            return new StateModifier<T>(this);
+            lock (m_syncRoot)
+            {
+                return new StateModifier<T>(this);
+            }
         }
 
         internal long Commit(T workingState, uint workingRevision)
