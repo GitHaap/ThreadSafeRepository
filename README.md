@@ -14,6 +14,8 @@ modifier.WorkingState = modifiedObj;
 
 // reflect the modification
 modifier.Commit();
+// or revert
+modifier.Revert();
 
 // CurrentState is deep-copied object
 var objX = repos.CurrentStateClone;
