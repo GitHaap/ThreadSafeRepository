@@ -167,7 +167,7 @@ namespace ThreadSafeRepository.Tests
 			Assert.False(committed);
 		}
 		[Fact]
-		public void 修正系_単一スレッドからのリバート()
+		public void 修正系_単一スレッドからのコミットからのリバート()
 		{
 			var repos = new Repository<int>(1000);
 
@@ -190,6 +190,29 @@ namespace ThreadSafeRepository.Tests
 			// モディファイアがリバートされる
 			Assert.Equal(1000, modifier.WorkingState);
 			Assert.Equal(1u, modifier.WorkingRevision);
+		}
+		[Fact]
+		public void 修正系_別のモディファイアでリバートしても当該モディファイアは影響しない()
+		{
+			var repos = new Repository<int>(1000);
+
+			// 2個のモディファイアAとBを用意する
+			var modifierA = repos.GetModifier();
+			var modifierB = repos.GetModifier();
+
+			// ABそれぞれで修正してコミットしない
+			modifierA.WorkingState = 2000;
+			modifierB.WorkingState = 3000;
+
+			// Aだけをリバートする
+			modifierA.Revert();
+
+			// Aは元に戻る
+			Assert.Equal(1000, modifierA.WorkingState);
+			Assert.Equal(1u, modifierA.WorkingRevision);
+			// Bはリバートされない
+			Assert.Equal(3000, modifierB.WorkingState);
+			Assert.Equal(1u, modifierB.WorkingRevision);			
 		}
 
 		[Fact]
