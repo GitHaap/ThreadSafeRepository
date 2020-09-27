@@ -4,48 +4,65 @@ using System.Text;
 
 namespace ThreadSafe
 {
-    public class StateModifier<T>
-    {
-        private readonly Repository<T> m_repos;
+	public class StateModifier<T>
+	{
+		private readonly Repository<T> m_repos;
 
-        /// <summary>
-        /// Get/Set WIP state. Modify this state directly.
-        /// </summary>
-        public T WorkingState { get; set; }
+		/// <summary>
+		/// Get/Set WIP state. Modify this state directly.
+		/// </summary>
+		public T WorkingState { get; set; }
 
-        /// <summary>
-        /// Get revision of WorkingState.
-        /// </summary>
-        public uint WorkingRevision { get; private set; }
+		/// <summary>
+		/// Get revision of WorkingState.
+		/// </summary>
+		public uint WorkingRevision { get; private set; }
 
 
-        internal StateModifier(Repository<T> repos)
-        {
-            m_repos = repos;
-            WorkingState = m_repos.CurrentStateClone;
-            WorkingRevision = m_repos.CurrentRevision;
-        }
+		private Repository<T>.Revision m_originalRevision;
 
-        /// <summary>
-        /// Commit WorkingState. CurrentState of the repository will be updated.
-        /// </summary>
-        public bool Commit()
-        {
-            lock (m_repos.m_syncRoot)
-            {
-                long committedRevision = m_repos.Commit(WorkingState, WorkingRevision);
-                if (committedRevision != -1)
-                {
-                    // success
-                    WorkingRevision = (uint)committedRevision; // revision up
-                    return true;
-                }
-                else
-                {
-                    // failure
-                    return false;
-                }
-            }
-        }
-    }
+
+		internal StateModifier(Repository<T> repos, Repository<T>.Revision revision)
+		{
+			m_repos = repos;
+			m_originalRevision = revision;
+			WorkingState = m_originalRevision.CurrentStateClone;
+			WorkingRevision = m_originalRevision.RevisionNumber;
+		}
+
+		/// <summary>
+		/// Commit WorkingState. CurrentState of the repository will be updated.
+		/// </summary>
+		public bool Commit()
+		{
+			lock (m_repos.m_syncRoot)
+			{
+				var committedRevision = m_repos.Commit(WorkingState, WorkingRevision);
+				if (committedRevision != null)
+				{
+					// success
+					m_originalRevision = committedRevision;
+					WorkingRevision = committedRevision.RevisionNumber;
+					return true;
+				}
+				else
+				{
+					// failure
+					return false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Revert original state.
+		/// </summary>
+		public void Revert()
+		{
+			lock (m_repos.m_syncRoot)
+			{
+				WorkingState = m_originalRevision.CurrentStateClone;
+				WorkingRevision = m_originalRevision.RevisionNumber;
+			}
+		}
+	}
 }

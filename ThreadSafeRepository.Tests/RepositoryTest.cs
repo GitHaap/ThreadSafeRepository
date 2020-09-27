@@ -134,7 +134,7 @@ namespace ThreadSafeRepository.Tests
 			// リポジトリに反映される
 			Assert.Equal(3000, repos.CurrentStateClone);
 			Assert.Equal(3u, repos.CurrentRevision); // リビジョン番号は増えるだけ
-			// モディファイアも修正される
+													 // モディファイアも修正される
 			Assert.Equal(3000, modifier2.WorkingState);
 			Assert.Equal(3u, modifier2.WorkingRevision);
 
@@ -165,6 +165,31 @@ namespace ThreadSafeRepository.Tests
 			modifier.WorkingState = 3000;
 			bool committed = modifier.Commit();
 			Assert.False(committed);
+		}
+		[Fact]
+		public void 修正系_単一スレッドからのリバート()
+		{
+			var repos = new Repository<int>(1000);
+
+			var modifier = repos.GetModifier();
+			Assert.Equal(1000, modifier.WorkingState);
+			Assert.Equal(1u, modifier.WorkingRevision);
+
+			modifier.WorkingState = 2000;
+
+			// リポジトリはこの時点では不変
+			Assert.Equal(1000, repos.CurrentStateClone);
+			Assert.Equal(1u, repos.CurrentRevision);
+
+			modifier.Revert();
+
+			// リポジトリはそのまま
+			Assert.Equal(1000, repos.CurrentStateClone);
+			Assert.Equal(1u, repos.CurrentRevision);
+
+			// モディファイアがリバートされる
+			Assert.Equal(1000, modifier.WorkingState);
+			Assert.Equal(1u, modifier.WorkingRevision);
 		}
 
 		[Fact]
