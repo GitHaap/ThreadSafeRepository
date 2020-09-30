@@ -31,6 +31,25 @@ namespace ThreadSafe
 		}
 
 		/// <summary>
+		/// Get "deep-copied" original state.
+		/// </summary>
+		public T OriginalStateClone
+		{
+			get
+			{
+				lock (m_repos.m_syncRoot)
+				{
+					if (m_originalRevision is null)
+					{
+						return default(T);
+					}
+
+					return m_originalRevision.CurrentStateClone;
+				}
+			}
+		}
+
+		/// <summary>
 		/// Commit WorkingState. CurrentState of the repository will be updated.
 		/// </summary>
 		public bool Commit()
