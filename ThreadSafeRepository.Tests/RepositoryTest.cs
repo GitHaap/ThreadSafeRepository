@@ -26,12 +26,23 @@ namespace ThreadSafeRepository.Tests
 		}
 
 		[Fact]
-		public void 参照系_取得したオブジェクトの参照は不一致している()
+		public void 参照系_取得したCurrentStateの参照は不一致している()
 		{
 			var repos = new Repository<int?>(1000, 100);
 
 			var objA = repos.CurrentStateClone;
 			var objB = repos.CurrentStateClone;
+
+			Assert.False(object.ReferenceEquals(objA, objB));
+		}
+		[Fact]
+		public void 参照系_取得したOriginalStateの参照は不一致している()
+		{
+			var repos = new Repository<int?>(1000, 100);
+			var modifier = repos.GetModifier();
+
+			var objA = modifier.OriginalStateClone;
+			var objB = modifier.OriginalStateClone;
 
 			Assert.False(object.ReferenceEquals(objA, objB));
 		}
@@ -212,7 +223,7 @@ namespace ThreadSafeRepository.Tests
 			Assert.Equal(1u, modifierA.WorkingRevision);
 			// Bはリバートされない
 			Assert.Equal(3000, modifierB.WorkingState);
-			Assert.Equal(1u, modifierB.WorkingRevision);			
+			Assert.Equal(1u, modifierB.WorkingRevision);
 		}
 
 		[Fact]
