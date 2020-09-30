@@ -1,7 +1,7 @@
 # ThreadSafeRepository
-Repository class is a thread-safe data manager for C#.
+Repository class is a thread-safe state manager for C#.
 
-You can modify/undo/redo the managed data exclusively.
+You can modify/undo/redo the managed state exclusively.
 
 
 # Usage
@@ -14,6 +14,8 @@ modifier.WorkingState = modifiedObj;
 
 // reflect the modification
 modifier.Commit();
+// or revert
+modifier.Revert();
 
 // CurrentState is deep-copied object
 var objX = repos.CurrentStateClone;
