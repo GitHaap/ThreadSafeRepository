@@ -1,5 +1,5 @@
 # ThreadSafeRepository
-Repository class is a thread-safe state manager for C#.
+`Repository` class is a thread-safe state manager for C#.
 
 You can modify/undo/redo the managed state exclusively.
 
